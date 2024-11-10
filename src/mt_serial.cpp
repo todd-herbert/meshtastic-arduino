@@ -1,17 +1,28 @@
 #include "mt_internals.h"
 
-#ifdef MT_SOFTWARESERIAL_SUPPORTED
+// Create serial object for platform
+#if defined(ARDUINO_ARCH_ESP32)
+  HardwareSerial *serial = &Serial1;
+#elif defined(ARDUINO_ARCH_SAMD)
+  HardwareSerial *serial = &Serial1;
+#else
+  #define MT_SOFTWARESERIAL
   #include <SoftwareSerial.h>
   SoftwareSerial *serial;
-#else
-  #define serial (&Serial1)
 #endif
 
 void mt_serial_init(int8_t rx_pin, int8_t tx_pin, uint32_t baud) {
-#ifndef ARDUINO_ARCH_SAMD
+
+// Platform specific: begin serial
+#if defined(ARDUINO_ARCH_ESP32)
+  serial->begin(baud, SERIAL_8N1, rx_pin, tx_pin);
+#elif defined(ARCHUINO_ARCH_SAMD)
+  // Original codebase didn't call begin() for SAMD? Left as-is.
+#elif defined(MT_SOFTWARESERIAL)
   serial = new SoftwareSerial(rx_pin, tx_pin);
   serial->begin(baud);
 #endif
+
   mt_wifi_mode = false;
   mt_serial_mode = true;
 }
